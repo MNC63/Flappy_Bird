@@ -8,15 +8,15 @@ import random
 # ------------
 def draw_floor():
     """ Draw double fllor to create infinite scrolling effect"""
-    screen.blit(floor, (floor_x_pos, 600))
-    screen.blit(floor, (floor_x_pos + 432, 600))
+    screen.blit(floor, (floor_x_pos, 650))
+    screen.blit(floor, (floor_x_pos + 432, 650))
 
 
 def create_pipe():
     bottom_pipe = pipe_sf.get_rect(
         midtop=(SCREEN_WIDTH//2 + 200, random.randint(250, 350)))
     top_pipe = pipe_sf.get_rect(
-        midbottom=(SCREEN_WIDTH//2 + 200, bottom_pipe.top - 130))
+        midbottom=(SCREEN_WIDTH//2 + 200, bottom_pipe.top - 150))
     return bottom_pipe, top_pipe
 
 
@@ -36,6 +36,15 @@ def draw_pipes(pipes):
         screen.blit(filp_pipe, top)
 
 
+def check_collision(pipes):
+    for bottom, top in pipes:
+        if bird_rect.colliderect(bottom) or bird_rect.colliderect(top):
+            return False
+    if bird_rect.top <= -75 or bird_rect.bottom >= 650:
+        return False
+    return True
+
+
 # ------------
 # Game setup
 # ------------
@@ -51,6 +60,7 @@ floor_x_pos = 0
 gravity = 0.25
 bird_movement = 0
 pipe_ls = []
+game_active = True
 
 # ------------
 # Load assets
@@ -86,26 +96,37 @@ while True:
             if event.key == pygame.K_SPACE:
                 bird_movement = 0
                 bird_movement -= 6
+
+            """ Restart the game """
+            if event.key == pygame.K_r and game_active == False:
+                game_active = True
+                pipe_ls.clear()
+                bird_rect.center = (100, SCREEN_HEIGHT // 2)
+                bird_movement = 0
+
         if event.type == spawnpipe:
             pipe_ls.append(create_pipe())
 
     # Background
     screen.blit(bg, (0, 0))
+    if game_active:
+        # Bird Movement
+        screen.blit(bird, bird_rect)
+        bird_movement += gravity
+        bird_rect.centery += bird_movement
 
-    # Bird Movement
-    screen.blit(bird, bird_rect)
-    bird_movement += gravity
-    bird_rect.centery += bird_movement
-
-    # Pipe Movement
-    pipe_ls = move_pipes(pipe_ls)
-    draw_pipes(pipe_ls)
+        # Pipe Movement
+        pipe_ls = move_pipes(pipe_ls)
+        draw_pipes(pipe_ls)
 
     # Floor Movement
     floor_x_pos -= 1
     draw_floor()
     if floor_x_pos <= -432:
         floor_x_pos = 0
+
+    # Collision
+    game_active = check_collision(pipe_ls)
 
     # Update the display
     pygame.display.update()
