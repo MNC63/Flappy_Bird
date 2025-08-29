@@ -16,7 +16,7 @@ def create_pipe():
     bottom_pipe = pipe_sf.get_rect(
         midtop=(SCREEN_WIDTH//2 + 200, random.randint(250, 350)))
     top_pipe = pipe_sf.get_rect(
-        midbottom=(SCREEN_WIDTH//2 + 200, bottom_pipe.top - 150))
+        midbottom=(SCREEN_WIDTH//2 + 200, bottom_pipe.top - 160))
     return bottom_pipe, top_pipe
 
 
@@ -45,6 +45,17 @@ def check_collision(pipes):
     return True
 
 
+def rotate_bird(bird1):
+    new_bird = pygame.transform.rotozoom(bird1, bird_movement * 4, 1)
+    return new_bird
+
+
+def bird_animation():
+    new_bird = bird_ls[bird_index]
+    new_bird_rect = new_bird.get_rect(center=(100, bird_rect.centery))
+    return new_bird, new_bird_rect
+
+
 # ------------
 # Game setup
 # ------------
@@ -61,6 +72,7 @@ gravity = 0.25
 bird_movement = 0
 pipe_ls = []
 game_active = True
+bird_index = 0
 
 # ------------
 # Load assets
@@ -71,8 +83,14 @@ bg = pygame.transform.scale2x(bg)
 floor = pygame.image.load('FileGame/assets/floor.png')
 floor = pygame.transform.scale2x(floor)
 
-bird = pygame.image.load('FileGame/assets/yellowbird-midflap.png')
-bird = pygame.transform.scale2x(bird)
+bird_down = pygame.transform.scale2x(pygame.image.load(
+    'FileGame/assets/yellowbird-downflap.png')).convert_alpha()
+bird_mid = pygame.transform.scale2x(pygame.image.load(
+    'FileGame/assets/yellowbird-midflap.png')).convert_alpha()
+bird_up = pygame.transform.scale2x(pygame.image.load(
+    'FileGame/assets/yellowbird-upflap.png')).convert_alpha()
+bird_ls = [bird_down, bird_mid, bird_up]
+bird = bird_ls[bird_index]
 bird_rect = bird.get_rect(center=(100, SCREEN_HEIGHT // 2))
 
 pipe_sf = pygame.image.load('FileGame/assets/pipe-green.png')
@@ -80,6 +98,10 @@ pipe_sf = pygame.transform.scale2x(pipe_sf)
 
 spawnpipe = pygame.USEREVENT
 pygame.time.set_timer(spawnpipe, 1200)
+
+""" Timer for bird flapping """
+birdflap = pygame.USEREVENT + 1
+pygame.time.set_timer(birdflap, 200)
 
 
 # ------------
@@ -107,11 +129,19 @@ while True:
         if event.type == spawnpipe:
             pipe_ls.append(create_pipe())
 
+        if event.type == birdflap:
+            if bird_index < 2:
+                bird_index += 1
+            else:
+                bird_index = 0
+            bird, bird_rect = bird_animation()
+
     # Background
     screen.blit(bg, (0, 0))
     if game_active:
         # Bird Movement
-        screen.blit(bird, bird_rect)
+        rotated_bird = rotate_bird(bird)
+        screen.blit(rotated_bird, bird_rect)
         bird_movement += gravity
         bird_rect.centery += bird_movement
 
