@@ -32,8 +32,8 @@ def move_pipes(pipes):
 def draw_pipes(pipes):
     for bottom, top in pipes:
         screen.blit(pipe_sf, bottom)
-        filp_pipe = pygame.transform.flip(pipe_sf, False, True)
-        screen.blit(filp_pipe, top)
+        flip_pipe = pygame.transform.flip(pipe_sf, False, True)
+        screen.blit(flip_pipe, top)
 
 
 def check_collision(pipes):
@@ -53,7 +53,7 @@ def rotate_bird(bird1):
 def bird_animation():
     new_bird = bird_ls[bird_index]
     new_bird_rect = new_bird.get_rect(center=(100, bird_rect.centery))
-    return new_bird, new_bird_rect
+    return new_bird
 
 
 def score_display(game_state):
@@ -70,13 +70,22 @@ def score_display(game_state):
 
         high_score_surface = game_font.render(
             f"HighScore: {int(high_score)}", True, (255, 255, 255))
-        high_score_rect = high_score_surface.get_rect(center=(216, 150))
+        high_score_rect = high_score_surface.get_rect(center=(216, 630))
         screen.blit(high_score_surface, high_score_rect)
+
+
+def check_score(pipes):
+    global score
+    for bottom, _ in pipes:
+        if 99 < bottom.centerx < 103:
+            score += 1
+            score_sound.play()
 
 
 # ------------
 # Game setup
 # ------------
+pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
 pygame.init()
 
 # screen and clock
@@ -94,6 +103,7 @@ game_active = True
 bird_index = 0
 score = 0
 high_score = 0
+
 
 # ------------
 # Load assets
@@ -133,6 +143,11 @@ game_over_sf = pygame.transform.scale2x(pygame.image.load(
 game_over_rect = game_over_sf.get_rect(
     center=(SCREEN_WIDTH//2, SCREEN_HEIGHT // 2))
 
+"""Sound"""
+flap_sound = pygame.mixer.Sound('FileGame/sound/sfx_wing.wav')
+collision_sound = pygame.mixer.Sound('FileGame/sound/sfx_hit.wav')
+score_sound = pygame.mixer.Sound('FileGame/sound/sfx_point.wav')
+
 
 # ------------
 # Game Loop
@@ -148,6 +163,7 @@ while True:
             if event.key == pygame.K_SPACE:
                 bird_movement = 0
                 bird_movement -= 6
+                flap_sound.play()
 
             """ Restart the game """
             if event.key == pygame.K_r and game_active == False:
@@ -165,7 +181,7 @@ while True:
                 bird_index += 1
             else:
                 bird_index = 0
-            bird, bird_rect = bird_animation()
+            bird = bird_animation()
 
     # Background
     screen.blit(bg, (0, 0))
@@ -181,7 +197,7 @@ while True:
         draw_pipes(pipe_ls)
 
         # Score
-        score += 0.1
+        check_score(pipe_ls)
         score_display('main_game')
     else:
         score_display('game_over')
@@ -195,7 +211,10 @@ while True:
         floor_x_pos = 0
 
     # Collision
-    game_active = check_collision(pipe_ls)
+    if not check_collision(pipe_ls):
+        if game_active:
+            collision_sound.play()
+        game_active = False
 
     # Update the display
     pygame.display.update()
