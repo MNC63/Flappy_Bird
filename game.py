@@ -56,6 +56,24 @@ def bird_animation():
     return new_bird, new_bird_rect
 
 
+def score_display(game_state):
+    if game_state == 'main_game':
+        score_surface = game_font.render(
+            f"{int(score)}", True, (255, 255, 255))
+        score_rect = score_surface.get_rect(center=(SCREEN_WIDTH // 2, 100))
+        screen.blit(score_surface, score_rect)
+    if game_state == 'game_over':
+        score_surface = game_font.render(
+            f"Score: {int(score)}", True, (255, 255, 255))
+        score_rect = score_surface.get_rect(center=(SCREEN_WIDTH // 2, 100))
+        screen.blit(score_surface, score_rect)
+
+        high_score_surface = game_font.render(
+            f"HighScore: {int(high_score)}", True, (255, 255, 255))
+        high_score_rect = high_score_surface.get_rect(center=(216, 150))
+        screen.blit(high_score_surface, high_score_rect)
+
+
 # ------------
 # Game setup
 # ------------
@@ -66,6 +84,7 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 432, 768
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
+
 # Game Variables
 floor_x_pos = 0
 gravity = 0.25
@@ -73,10 +92,14 @@ bird_movement = 0
 pipe_ls = []
 game_active = True
 bird_index = 0
+score = 0
+high_score = 0
 
 # ------------
 # Load assets
 # ------------
+game_font = pygame.font.Font('FileGame/04B_19.TTF', 40)
+
 bg = pygame.image.load('FileGame/assets/background-night.png')
 bg = pygame.transform.scale2x(bg)
 
@@ -103,6 +126,13 @@ pygame.time.set_timer(spawnpipe, 1200)
 birdflap = pygame.USEREVENT + 1
 pygame.time.set_timer(birdflap, 200)
 
+"""Over surface"""
+game_over_sf = pygame.transform.scale2x(pygame.image.load(
+    'FileGame/assets/message.png'
+)).convert_alpha()
+game_over_rect = game_over_sf.get_rect(
+    center=(SCREEN_WIDTH//2, SCREEN_HEIGHT // 2))
+
 
 # ------------
 # Game Loop
@@ -125,6 +155,7 @@ while True:
                 pipe_ls.clear()
                 bird_rect.center = (100, SCREEN_HEIGHT // 2)
                 bird_movement = 0
+                score = 0
 
         if event.type == spawnpipe:
             pipe_ls.append(create_pipe())
@@ -149,6 +180,14 @@ while True:
         pipe_ls = move_pipes(pipe_ls)
         draw_pipes(pipe_ls)
 
+        # Score
+        score += 0.1
+        score_display('main_game')
+    else:
+        score_display('game_over')
+        if score > high_score:
+            high_score = score
+        screen.blit(game_over_sf, game_over_rect)
     # Floor Movement
     floor_x_pos -= 1
     draw_floor()
